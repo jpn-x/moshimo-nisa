@@ -7,19 +7,19 @@
 <meta name="description" content="人気インデックスファンドの過去の値動きから、何年前にいくら投資していたら今いくらになっていたかを計算します。">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" href="favicon.svg">
-<meta name="theme-color" content="#e0263b">
+<meta name="theme-color" content="#00b8d9">
 <style>
 :root{
-  --bg:#0b0f19;
-  --bg-elev:#12172a;
-  --bg-card:#161d33;
-  --border:#232c47;
-  --text:#eef1fb;
-  --text-dim:#8891ad;
-  --accent:#5b8cff;
-  --accent2:#7c5cff;
-  --up:#2fd18f;
-  --down:#ff5c7a;
+  --bg:#eef9ff;
+  --bg-elev:#ffffff;
+  --bg-card:#ffffff;
+  --border:#d7edf7;
+  --text:#123a52;
+  --text-dim:#6089a3;
+  --accent:#00b8d9;
+  --accent2:#2ecc8f;
+  --up:#16a34a;
+  --down:#f0455a;
   --radius:18px;
   --radius-sm:12px;
   font-size:16px;
@@ -28,8 +28,9 @@
 html,body{margin:0;padding:0;}
 body{
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(91,140,255,0.16), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(124,92,255,0.12), transparent 60%),
+    radial-gradient(1100px 550px at 50% -10%, rgba(0,184,217,0.14), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(46,204,143,0.13), transparent 60%),
+    radial-gradient(800px 500px at 0% 100%, rgba(255,201,60,0.14), transparent 60%),
     var(--bg);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro JP","Hiragino Sans","Noto Sans JP",sans-serif;
@@ -41,19 +42,19 @@ body{
 
 header.app-header{padding:8px 4px 20px;text-align:center;}
 header.app-header h1{
-  font-size:1.4rem;margin:0 0 6px;font-weight:800;letter-spacing:.01em;
-  background:linear-gradient(90deg,#8fb4ff,#c6b6ff);
+  font-size:1.4rem;margin:0 0 6px;font-weight:900;letter-spacing:.01em;
+  background:linear-gradient(90deg,#00b8d9,#2ecc8f);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
 header.app-header p{margin:0;color:var(--text-dim);font-size:.82rem;line-height:1.5;}
 
 .card{
-  background:linear-gradient(180deg, var(--bg-card), var(--bg-elev));
+  background:var(--bg-card);
   border:1px solid var(--border);
   border-radius:var(--radius);
   padding:16px;
   margin-bottom:14px;
-  box-shadow:0 8px 24px -12px rgba(0,0,0,0.5);
+  box-shadow:0 8px 24px -12px rgba(18,58,82,0.14);
 }
 .card h2{
   font-size:.78rem;font-weight:700;letter-spacing:.06em;color:var(--text-dim);
@@ -70,7 +71,7 @@ header.app-header p{margin:0;color:var(--text-dim);font-size:.82rem;line-height:
 }
 .segment button.active{
   background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
-  box-shadow:0 4px 14px -4px rgba(91,140,255,0.6);
+  box-shadow:0 4px 14px -4px rgba(0,184,217,0.45);
 }
 
 /* fund grid */
@@ -84,16 +85,15 @@ header.app-header p{margin:0;color:var(--text-dim);font-size:.82rem;line-height:
 .fund-btn .name{font-size:.82rem;font-weight:700;line-height:1.3;}
 .fund-btn .tag{
   align-self:flex-start;font-size:.66rem;font-weight:700;color:var(--accent);
-  background:rgba(91,140,255,0.12);padding:2px 8px;border-radius:999px;
+  background:rgba(0,184,217,0.1);padding:2px 8px;border-radius:999px;
 }
 .fund-btn.selected{
   border-color:transparent;
   background:linear-gradient(var(--bg-card),var(--bg-card)) padding-box,
              linear-gradient(135deg,var(--accent),var(--accent2)) border-box;
   border:2px solid transparent;
-  box-shadow:0 6px 18px -8px rgba(91,140,255,0.5);
+  box-shadow:0 6px 18px -8px rgba(0,184,217,0.35);
 }
-.fund-btn.selected .tag{background:rgba(255,255,255,0.15);color:#fff;}
 .fund-btn:active{transform:scale(0.97);}
 
 /* amount chips */
@@ -112,7 +112,7 @@ header.app-header p{margin:0;color:var(--text-dim);font-size:.82rem;line-height:
   border:1px solid var(--border);background:var(--bg);color:var(--text-dim);
   padding:7px 13px;border-radius:999px;font-size:.78rem;font-weight:700;cursor:pointer;
 }
-.chip.active{border-color:var(--accent);color:#fff;background:rgba(91,140,255,0.18);}
+.chip.active{border-color:var(--accent);color:var(--accent);font-weight:900;background:rgba(0,184,217,0.1);}
 
 /* date selects */
 .date-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
@@ -130,7 +130,7 @@ header.app-header p{margin:0;color:var(--text-dim);font-size:.82rem;line-height:
 .search-btn{
   width:100%;border:0;border-radius:999px;padding:16px;font-size:1rem;font-weight:800;color:#fff;
   background:linear-gradient(135deg,var(--accent),var(--accent2));
-  box-shadow:0 10px 26px -10px rgba(91,140,255,0.7);cursor:pointer;
+  box-shadow:0 10px 26px -10px rgba(0,184,217,0.55);cursor:pointer;
   letter-spacing:.02em;
 }
 .search-btn:active{transform:scale(0.98);}
@@ -155,13 +155,13 @@ header.app-header p{margin:0;color:var(--text-dim);font-size:.82rem;line-height:
 .footer-note{text-align:center;color:var(--text-dim);font-size:.7rem;line-height:1.7;margin-top:22px;padding:0 12px;}
 .footer-note a{color:var(--text-dim);}
 
-.error-box{display:none;background:rgba(255,92,122,0.12);border:1px solid rgba(255,92,122,0.4);color:#ffb3c1;border-radius:12px;padding:12px 14px;font-size:.82rem;margin-bottom:14px;}
+.error-box{display:none;background:rgba(240,69,90,0.08);border:1px solid rgba(240,69,90,0.35);color:#c81e39;border-radius:12px;padding:12px 14px;font-size:.82rem;margin-bottom:14px;}
 
 .notice-box{
-  background:rgba(255,196,92,0.1);border:1px solid rgba(255,196,92,0.35);color:#ffd899;
+  background:#fff6df;border:1px solid #ffdf8f;color:#8a6100;
   border-radius:12px;padding:11px 14px;font-size:.72rem;line-height:1.7;margin-bottom:14px;
 }
-.notice-box b{color:#ffe4b3;}
+.notice-box b{color:#6b4a00;}
 
 header.app-header{position:relative;}
 .title-row{display:flex;align-items:center;justify-content:center;gap:8px;}
@@ -178,10 +178,10 @@ header.app-header{position:relative;}
 }
 .modal-overlay.open{display:flex;align-items:flex-start;justify-content:center;}
 .modal-card{
-  background:linear-gradient(180deg, var(--bg-card), var(--bg-elev));
+  background:var(--bg-card);
   border:1px solid var(--border);border-radius:var(--radius);
   max-width:480px;width:100%;padding:20px;margin-top:6vh;
-  box-shadow:0 20px 60px -20px rgba(0,0,0,0.7);
+  box-shadow:0 20px 60px -20px rgba(18,58,82,0.45);
 }
 .modal-card h3{margin:0 0 14px;font-size:1.05rem;font-weight:800;display:flex;align-items:center;justify-content:space-between;}
 .modal-close{
