@@ -339,7 +339,7 @@ async function loadData(){
     if(!res.ok) throw new Error("data fetch failed: " + res.status);
     DATA = await res.json();
     document.getElementById("footerNote").innerHTML =
-      `データ: 各運用会社の公式サイト（三菱UFJアセットマネジメント／アセットマネジメントOne／ニッセイアセットマネジメント／楽天投信投資顧問）　最終更新: ${new Date(DATA.updated_at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})} JST<br>` +
+      `最終更新: ${new Date(DATA.updated_at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})} JST<br>` +
       `本ツールは情報提供を目的としており、投資勧誘を目的とするものではありません。分配金・配当・税金・手数料は考慮していません。`;
     buildFundGrid();
     selectFund(DATA.tickers.find(t=>t.category===selectedCategory).symbol);
