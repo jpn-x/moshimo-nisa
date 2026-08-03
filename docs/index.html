@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>もしもNISAシミュレーター</title>
+<meta name="description" content="人気インデックスファンドの過去の値動きから、何年前にいくら投資していたら今いくらになっていたかを計算します。">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+<meta name="theme-color" content="#e0263b">
+<style>
+:root{
+  --bg:#0b0f19;
+  --bg-elev:#12172a;
+  --bg-card:#161d33;
+  --border:#232c47;
+  --text:#eef1fb;
+  --text-dim:#8891ad;
+  --accent:#5b8cff;
+  --accent2:#7c5cff;
+  --up:#2fd18f;
+  --down:#ff5c7a;
+  --radius:18px;
+  --radius-sm:12px;
+  font-size:16px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(91,140,255,0.16), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(124,92,255,0.12), transparent 60%),
+    var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro JP","Hiragino Sans","Noto Sans JP",sans-serif;
+  min-height:100vh;
+  padding-bottom:48px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 0;}
+
+header.app-header{padding:8px 4px 20px;text-align:center;}
+header.app-header h1{
+  font-size:1.4rem;margin:0 0 6px;font-weight:800;letter-spacing:.01em;
+  background:linear-gradient(90deg,#8fb4ff,#c6b6ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+header.app-header p{margin:0;color:var(--text-dim);font-size:.82rem;line-height:1.5;}
+
+.card{
+  background:linear-gradient(180deg, var(--bg-card), var(--bg-elev));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:0 8px 24px -12px rgba(0,0,0,0.5);
+}
+.card h2{
+  font-size:.78rem;font-weight:700;letter-spacing:.06em;color:var(--text-dim);
+  margin:0 0 12px;text-transform:uppercase;display:flex;align-items:center;gap:6px;
+}
+
+/* segmented tab */
+.segment{
+  display:flex;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:4px;gap:4px;
+}
+.segment button{
+  flex:1;border:0;background:transparent;color:var(--text-dim);padding:10px 0;border-radius:999px;
+  font-size:.92rem;font-weight:700;cursor:pointer;transition:all .2s ease;
+}
+.segment button.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+  box-shadow:0 4px 14px -4px rgba(91,140,255,0.6);
+}
+
+/* fund grid */
+.fund-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+.fund-btn{
+  text-align:left;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:12px 10px;cursor:pointer;color:var(--text);transition:all .15s ease;
+  display:flex;flex-direction:column;gap:6px;min-height:78px;
+}
+.fund-btn .code{font-size:.68rem;color:var(--text-dim);font-weight:700;letter-spacing:.03em;}
+.fund-btn .name{font-size:.82rem;font-weight:700;line-height:1.3;}
+.fund-btn .tag{
+  align-self:flex-start;font-size:.66rem;font-weight:700;color:var(--accent);
+  background:rgba(91,140,255,0.12);padding:2px 8px;border-radius:999px;
+}
+.fund-btn.selected{
+  border-color:transparent;
+  background:linear-gradient(var(--bg-card),var(--bg-card)) padding-box,
+             linear-gradient(135deg,var(--accent),var(--accent2)) border-box;
+  border:2px solid transparent;
+  box-shadow:0 6px 18px -8px rgba(91,140,255,0.5);
+}
+.fund-btn.selected .tag{background:rgba(255,255,255,0.15);color:#fff;}
+.fund-btn:active{transform:scale(0.97);}
+
+/* amount chips */
+.amount-input{
+  display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 14px;gap:6px;margin-bottom:10px;
+}
+.amount-input input{
+  flex:1;background:transparent;border:0;outline:0;color:var(--text);font-size:1.3rem;font-weight:800;
+  min-width:0;
+  font-variant-numeric:tabular-nums;
+}
+.amount-input span{color:var(--text-dim);font-weight:700;font-size:.95rem;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  border:1px solid var(--border);background:var(--bg);color:var(--text-dim);
+  padding:7px 13px;border-radius:999px;font-size:.78rem;font-weight:700;cursor:pointer;
+}
+.chip.active{border-color:var(--accent);color:#fff;background:rgba(91,140,255,0.18);}
+
+/* date selects */
+.date-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.date-row .label{width:52px;flex-shrink:0;font-size:.78rem;color:var(--text-dim);font-weight:700;}
+.date-row select{
+  flex:1;background:var(--bg);border:1.5px solid var(--border);color:var(--text);
+  border-radius:10px;padding:9px 4px;font-size:.86rem;font-weight:600;text-align:center;
+  -webkit-appearance:none;appearance:none;
+}
+.date-hint{font-size:.7rem;color:var(--text-dim);margin-top:2px;}
+
+.mode-desc{font-size:.76rem;color:var(--text-dim);line-height:1.6;margin-top:12px;}
+.mode-desc b{color:var(--text);}
+
+.search-btn{
+  width:100%;border:0;border-radius:999px;padding:16px;font-size:1rem;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 10px 26px -10px rgba(91,140,255,0.7);cursor:pointer;
+  letter-spacing:.02em;
+}
+.search-btn:active{transform:scale(0.98);}
+.search-btn:disabled{opacity:.4;}
+
+/* result */
+#result{display:none;}
+.result-hero{text-align:center;padding:8px 0 4px;}
+.result-hero .fund-label{font-size:.78rem;color:var(--text-dim);font-weight:700;margin-bottom:6px;}
+.result-hero .pct{font-size:2.6rem;font-weight:900;letter-spacing:-.01em;line-height:1;}
+.result-hero .pct.up{color:var(--up);}
+.result-hero .pct.down{color:var(--down);}
+.result-hero .sub{margin-top:8px;font-size:.85rem;color:var(--text-dim);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.stat{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;}
+.stat .k{font-size:.68rem;color:var(--text-dim);font-weight:700;margin-bottom:4px;}
+.stat .v{font-size:1.02rem;font-weight:800;font-variant-numeric:tabular-nums;}
+.chart-box{margin-top:16px;}
+.chart-box svg{width:100%;height:auto;display:block;}
+.fx-note{margin-top:10px;font-size:.72rem;color:var(--text-dim);line-height:1.5;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+
+.footer-note{text-align:center;color:var(--text-dim);font-size:.7rem;line-height:1.7;margin-top:22px;padding:0 12px;}
+.footer-note a{color:var(--text-dim);}
+
+.error-box{display:none;background:rgba(255,92,122,0.12);border:1px solid rgba(255,92,122,0.4);color:#ffb3c1;border-radius:12px;padding:12px 14px;font-size:.82rem;margin-bottom:14px;}
+
+.notice-box{
+  background:rgba(255,196,92,0.1);border:1px solid rgba(255,196,92,0.35);color:#ffd899;
+  border-radius:12px;padding:11px 14px;font-size:.72rem;line-height:1.7;margin-bottom:14px;
+}
+.notice-box b{color:#ffe4b3;}
+
+header.app-header{position:relative;}
+.title-row{display:flex;align-items:center;justify-content:center;gap:8px;}
+.howto-btn{
+  border:1px solid var(--border);background:var(--bg-card);color:var(--text-dim);
+  font-size:.72rem;font-weight:700;padding:5px 11px;border-radius:999px;cursor:pointer;
+  white-space:nowrap;
+}
+.howto-btn:active{transform:scale(0.96);}
+
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(4,6,14,0.72);z-index:100;
+  padding:20px 16px;overflow-y:auto;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+}
+.modal-overlay.open{display:flex;align-items:flex-start;justify-content:center;}
+.modal-card{
+  background:linear-gradient(180deg, var(--bg-card), var(--bg-elev));
+  border:1px solid var(--border);border-radius:var(--radius);
+  max-width:480px;width:100%;padding:20px;margin-top:6vh;
+  box-shadow:0 20px 60px -20px rgba(0,0,0,0.7);
+}
+.modal-card h3{margin:0 0 14px;font-size:1.05rem;font-weight:800;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{
+  border:0;background:var(--bg);color:var(--text-dim);width:30px;height:30px;border-radius:50%;
+  font-size:1rem;cursor:pointer;flex-shrink:0;
+}
+.modal-section{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;}
+.modal-section h4{margin:0 0 8px;font-size:.9rem;font-weight:800;}
+.modal-section ol{margin:0;padding-left:1.2em;font-size:.82rem;line-height:1.8;color:var(--text-dim);}
+.modal-section ol li b{color:var(--text);}
+.modal-tip{font-size:.72rem;color:var(--text-dim);line-height:1.7;padding:0 2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app-header">
+    <div class="title-row">
+      <h1>もしもNISAシミュレーター</h1>
+      <button class="howto-btn" id="howtoBtn">❓ 使い方</button>
+    </div>
+    <p>あの時◯円始めていたら、今いくら？<br>人気インデックスファンドの実際の値動きで計算します</p>
+  </header>
+
+  <div class="modal-overlay" id="howtoModal">
+    <div class="modal-card">
+      <h3>使い方 <button class="modal-close" id="howtoClose">✕</button></h3>
+
+      <div class="modal-section">
+        <h4>💰 一括投資モード</h4>
+        <ol>
+          <li>① で銘柄を1つタップして選ぶ</li>
+          <li>② で「一括投資」を選ぶ</li>
+          <li>③ に投資したい金額を入力（例: 100万円）</li>
+          <li>④ で「開始日」と「終了日」を選ぶ</li>
+          <li>「利回りを検索する」をタップ →「<b>その日に一括で入れてたら、今いくらになってたか</b>」がわかります</li>
+        </ol>
+      </div>
+
+      <div class="modal-section">
+        <h4>📅 積立投資モード</h4>
+        <ol>
+          <li>① で銘柄を1つタップして選ぶ</li>
+          <li>② で「積立投資」を選ぶ</li>
+          <li>③ に毎月積み立てたい金額を入力（例: 3万円）</li>
+          <li>④ の「開始月」で選んだ日にちを毎月の積立日として、終了日まで自動でコツコツ買い付けたと仮定します（例: 5日開始なら毎月5日に購入）</li>
+          <li>「利回りを検索する」をタップ →「<b>毎月コツコツ積み立ててたら、今いくらになってたか</b>」がわかります</li>
+        </ol>
+      </div>
+
+      <p class="modal-tip">※ 分配金・配当金の再投資、税金、手数料は考慮していません（あくまで基準価額の値動きのみの簡易シミュレーションです）。</p>
+    </div>
+  </div>
+
+  <div class="notice-box">
+    <b>⚠️ このツールに含まれていない要素</b><br>
+    分配金・配当金の再投資、税金、購入時手数料・信託報酬などのコストは<b>一切考慮していません</b>。あくまで基準価額・終値の変動のみで計算した簡易シミュレーションです。実際のリターンとは差が生じます。
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="card">
+    <h2>① 銘柄を選ぶ</h2>
+    <div class="segment" id="categoryTabs">
+      <button class="active" data-cat="domestic">🇯🇵 国内</button>
+      <button data-cat="global">🌎 海外</button>
+    </div>
+    <div class="fund-grid" id="fundGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>② 投資スタイル</h2>
+    <div class="segment" id="modeTabs">
+      <button class="active" data-mode="lump">💰 一括投資</button>
+      <button data-mode="dca">📅 積立投資</button>
+    </div>
+    <div class="mode-desc">
+      <b>一括投資</b>なら「あの時〇〇円入れてたら今いくら！？」、<b>積立投資</b>なら「毎月〇〇円コツコツ積み立ててたら今いくら！？」を計算。お好きなスタイルを選んで検索できます。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 id="amountLabel">③ 投資額</h2>
+    <div class="amount-input">
+      <input type="text" inputmode="numeric" id="amountInput" value="1,000,000">
+      <span id="amountUnit">円</span>
+    </div>
+    <div class="chips" id="amountChips"></div>
+  </div>
+
+  <div class="card">
+    <h2>④ 期間</h2>
+    <div class="date-row">
+      <div class="label" id="startLabel">開始日</div>
+      <select id="startY"></select>
+      <select id="startM"></select>
+      <select id="startD"></select>
+    </div>
+    <div class="date-row">
+      <div class="label">終了日</div>
+      <select id="endY"></select>
+      <select id="endM"></select>
+      <select id="endD"></select>
+    </div>
+    <div class="date-hint" id="rangeHint"></div>
+    <div class="date-hint" id="dcaHint" style="display:none;"></div>
+  </div>
+
+  <button class="search-btn" id="searchBtn">利回りを検索する</button>
+
+  <div class="card" id="result">
+    <div class="result-hero">
+      <div class="fund-label" id="resFundLabel"></div>
+      <div class="pct" id="resPct">--</div>
+      <div class="sub" id="resSub"></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="k" id="resPrincipalLabel">投資額</div><div class="v" id="resPrincipal">-</div></div>
+      <div class="stat"><div class="k">評価額</div><div class="v" id="resFinal">-</div></div>
+      <div class="stat"><div class="k">損益</div><div class="v" id="resProfit">-</div></div>
+      <div class="stat"><div class="k" id="resFourthLabel">年率換算（CAGR）</div><div class="v" id="resFourth">-</div></div>
+    </div>
+    <div class="chart-box" id="chartBox"></div>
+    <div class="fx-note" id="fxNote" style="display:none;"></div>
+  </div>
+
+  <div class="footer-note" id="footerNote">読み込み中...</div>
+
+</div>
+
+<script>
+const DATA_URL = "data/prices.json";
+let DATA = null;
+let selectedCategory = "domestic";
+let selectedSymbol = null;
+let mode = "lump"; // "lump" | "dca"
+
+const AMOUNT_CHIPS = {
+  lump: [["100000","10万"],["500000","50万"],["1000000","100万",true],["3000000","300万"],["10000000","1000万"]],
+  dca: [["10000","1万"],["30000","3万"],["50000","5万",true],["100000","10万"],["200000","20万"]],
+};
+
+const fmtYen = n => "¥" + Math.round(n).toLocaleString("ja-JP");
+const fmtPct = n => (n>=0?"+":"") + n.toFixed(1) + "%";
+
+function showError(msg){
+  const box = document.getElementById("errorBox");
+  box.textContent = msg;
+  box.style.display = msg ? "block" : "none";
+}
+
+async function loadData(){
+  try{
+    const res = await fetch(DATA_URL, {cache:"no-store"});
+    if(!res.ok) throw new Error("data fetch failed: " + res.status);
+    DATA = await res.json();
+    document.getElementById("footerNote").innerHTML =
+      `データ: 各運用会社の公式サイト（三菱UFJアセットマネジメント／アセットマネジメントOne／ニッセイアセットマネジメント／楽天投信投資顧問）　最終更新: ${new Date(DATA.updated_at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})} JST<br>` +
+      `本ツールは情報提供を目的としており、投資勧誘を目的とするものではありません。分配金・配当・税金・手数料は考慮していません。`;
+    buildFundGrid();
+    selectFund(DATA.tickers.find(t=>t.category===selectedCategory).symbol);
+  }catch(e){
+    showError("データの読み込みに失敗しました。時間をおいて再度お試しください。(" + e.message + ")");
+  }
+}
+
+function buildFundGrid(){
+  const grid = document.getElementById("fundGrid");
+  grid.innerHTML = "";
+  DATA.tickers.filter(t=>t.category===selectedCategory).forEach(t=>{
+    const btn = document.createElement("button");
+    btn.className = "fund-btn" + (t.symbol===selectedSymbol ? " selected":"");
+    btn.dataset.symbol = t.symbol;
+    btn.innerHTML = `<span class="code">${t.symbol}</span><span class="name">${t.name}</span><span class="tag">${t.tag}</span>`;
+    btn.onclick = () => selectFund(t.symbol);
+    grid.appendChild(btn);
+  });
+}
+
+function tickerInfo(symbol){
+  return DATA.tickers.find(t=>t.symbol===symbol);
+}
+
+function dateKeys(symbol){
+  return Object.keys(DATA.prices[symbol]).sort();
+}
+
+function selectFund(symbol){
+  selectedSymbol = symbol;
+  document.querySelectorAll(".fund-btn").forEach(b=>{
+    b.classList.toggle("selected", b.dataset.symbol===symbol);
+  });
+  const keys = dateKeys(symbol);
+  const minDate = keys[0], maxDate = keys[keys.length-1];
+  buildDateSelects(minDate, maxDate);
+  document.getElementById("rangeHint").textContent =
+    `データ範囲: ${minDate} 〜 ${maxDate}`;
+  document.getElementById("result").style.display = "none";
+}
+
+function buildDateSelects(minDate, maxDate){
+  const [minY,minM,minD] = minDate.split("-").map(Number);
+  const [maxY,maxM,maxD] = maxDate.split("-").map(Number);
+
+  // デフォルト: 終了日=データ最新日、開始日=2年前 or データ開始日のうち遅い方
+  let defStart = new Date(maxY, maxM-1, maxD);
+  defStart.setFullYear(defStart.getFullYear()-2);
+  const minDateObj = new Date(minY, minM-1, minD);
+  if(defStart < minDateObj) defStart = minDateObj;
+
+  fillYMD("start", minY, maxY, defStart.getFullYear(), defStart.getMonth()+1, defStart.getDate());
+  fillYMD("end", minY, maxY, maxY, maxM, maxD);
+}
+
+function fillYMD(prefix, minY, maxY, defY, defM, defD){
+  const ySel = document.getElementById(prefix+"Y");
+  const mSel = document.getElementById(prefix+"M");
+  const dSel = document.getElementById(prefix+"D");
+  ySel.innerHTML = "";
+  for(let y=maxY;y>=minY;y--){
+    const opt = document.createElement("option");
+    opt.value=y; opt.textContent=y+"年";
+    if(y===defY) opt.selected=true;
+    ySel.appendChild(opt);
+  }
+  mSel.innerHTML = "";
+  for(let m=1;m<=12;m++){
+    const opt = document.createElement("option");
+    opt.value=m; opt.textContent=m+"月";
+    if(m===defM) opt.selected=true;
+    mSel.appendChild(opt);
+  }
+  dSel.innerHTML = "";
+  for(let d=1;d<=31;d++){
+    const opt = document.createElement("option");
+    opt.value=d; opt.textContent=d+"日";
+    if(d===defD) opt.selected=true;
+    dSel.appendChild(opt);
+  }
+}
+
+function getSelectedDate(prefix){
+  const y = document.getElementById(prefix+"Y").value;
+  const m = String(document.getElementById(prefix+"M").value).padStart(2,"0");
+  const d = String(document.getElementById(prefix+"D").value).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
+
+// 指定日以前で最も近い営業日の値を返す（無ければ以降で最も近い日）
+function nearestValue(seriesObj, targetDate){
+  const keys = Object.keys(seriesObj).sort();
+  let best = null;
+  for(const k of keys){
+    if(k <= targetDate){ best = k; } else { break; }
+  }
+  if(best === null) best = keys[0];
+  return {date: best, value: seriesObj[best]};
+}
+
+document.getElementById("categoryTabs").addEventListener("click", e=>{
+  const btn = e.target.closest("button[data-cat]");
+  if(!btn) return;
+  selectedCategory = btn.dataset.cat;
+  document.querySelectorAll("#categoryTabs button").forEach(b=>b.classList.toggle("active", b===btn));
+  buildFundGrid();
+  selectFund(DATA.tickers.find(t=>t.category===selectedCategory).symbol);
+});
+
+function buildAmountChips(){
+  const wrap = document.getElementById("amountChips");
+  wrap.innerHTML = "";
+  AMOUNT_CHIPS[mode].forEach(([amt,label,isDefault])=>{
+    const chip = document.createElement("div");
+    chip.className = "chip" + (isDefault ? " active":"");
+    chip.dataset.amt = amt;
+    chip.textContent = label;
+    wrap.appendChild(chip);
+    if(isDefault) document.getElementById("amountInput").value = Number(amt).toLocaleString("ja-JP");
+  });
+}
+
+document.getElementById("modeTabs").addEventListener("click", e=>{
+  const btn = e.target.closest("button[data-mode]");
+  if(!btn) return;
+  mode = btn.dataset.mode;
+  document.querySelectorAll("#modeTabs button").forEach(b=>b.classList.toggle("active", b===btn));
+  const isDca = mode === "dca";
+  document.getElementById("amountLabel").textContent = isDca ? "③ 毎月の積立額" : "③ 投資額";
+  document.getElementById("startLabel").textContent = isDca ? "開始月" : "開始日";
+  document.getElementById("dcaHint").style.display = isDca ? "block" : "none";
+  buildAmountChips();
+  document.getElementById("result").style.display = "none";
+  updateDcaHint();
+});
+
+document.getElementById("amountChips").addEventListener("click", e=>{
+  const chip = e.target.closest(".chip");
+  if(!chip) return;
+  document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("active", c===chip));
+  document.getElementById("amountInput").value = Number(chip.dataset.amt).toLocaleString("ja-JP");
+});
+
+function updateDcaHint(){
+  if(mode !== "dca") return;
+  const d = document.getElementById("startD").value;
+  document.getElementById("dcaHint").textContent = `毎月${d}日（月末に満たない月は月末日）に積み立てたものとして計算します。`;
+}
+["startY","startM","startD"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", updateDcaHint);
+});
+
+document.getElementById("amountInput").addEventListener("input", e=>{
+  const raw = e.target.value.replace(/[^0-9]/g,"");
+  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
+  e.target.value = raw ? Number(raw).toLocaleString("ja-JP") : "";
+});
+document.getElementById("amountInput").addEventListener("blur", e=>{
+  const raw = e.target.value.replace(/[^0-9]/g,"") || "0";
+  e.target.value = Number(raw).toLocaleString("ja-JP");
+});
+
+function buildSparkline(dates, values){
+  const w = 480, h = 140, pad = 6;
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = (max-min) || 1;
+  const pts = values.map((v,i)=>{
+    const x = pad + (i/(values.length-1)) * (w-pad*2);
+    const y = h - pad - ((v-min)/range) * (h-pad*2);
+    return [x,y];
+  });
+  const up = values[values.length-1] >= values[0];
+  const color = up ? "var(--up)" : "var(--down)";
+  const line = pts.map((p,i)=> (i===0?"M":"L") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const area = line + ` L${pts[pts.length-1][0].toFixed(1)},${h-pad} L${pts[0][0].toFixed(1)},${h-pad} Z`;
+  const gid = "g" + Math.random().toString(36).slice(2,8);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})" stroke="none"/>
+    <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// 開始日と同じ「日」で、開始月〜終了月まで毎月1本ずつ購入日を作る（月末に満たない月は月末日にクランプ）
+function monthlyPurchaseDates(startDate, endDate){
+  const [sy,sm,sd] = startDate.split("-").map(Number);
+  const [ey,em] = endDate.split("-").map(Number);
+  const dates = [];
+  let y = sy, m = sm;
+  while(y < ey || (y===ey && m<=em)){
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const day = Math.min(sd, daysInMonth);
+    const ds = `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    if(ds <= endDate) dates.push(ds);
+    m++;
+    if(m>12){ m=1; y++; }
+  }
+  return dates;
+}
+
+function runLumpSum(info, principal, startDate, endDate){
+  const series = DATA.prices[selectedSymbol];
+  const p0 = nearestValue(series, startDate);
+  const p1 = nearestValue(series, endDate);
+
+  let finalValue, fxNoteHtml = "";
+  if(info.currency === "JPY"){
+    const units = principal / p0.value;
+    finalValue = units * p1.value;
+  } else {
+    const fx0 = nearestValue(DATA.usdjpy, startDate);
+    const fx1 = nearestValue(DATA.usdjpy, endDate);
+    const usdAmount = principal / fx0.value;
+    const units = usdAmount / p0.value;
+    finalValue = (units * p1.value) * fx1.value;
+    fxNoteHtml = `為替換算あり: 開始時 1USD=${fx0.value.toFixed(2)}円(${fx0.date}) → 終了時 1USD=${fx1.value.toFixed(2)}円(${fx1.date})。価格変動のみのシンプル計算で、分配金・配当・税金・手数料は含みません。`;
+  }
+
+  const profit = finalValue - principal;
+  const pct = (finalValue/principal - 1) * 100;
+  const days = (new Date(p1.date) - new Date(p0.date)) / 86400000;
+  const years = days/365.25;
+  const cagr = years > 0 ? (Math.pow(finalValue/principal, 1/years) - 1) * 100 : 0;
+
+  document.getElementById("resPrincipalLabel").textContent = "投資額";
+  document.getElementById("resFourthLabel").textContent = "年率換算（CAGR）";
+  document.getElementById("resFourth").textContent = fmtPct(cagr) + " / 年";
+  document.getElementById("resSub").textContent = `${p0.date} 〜 ${p1.date}（約${years.toFixed(1)}年、一括投資）`;
+
+  return {finalValue, principal, profit, pct, fxNoteHtml, chartStart: p0.date, chartEnd: p1.date};
+}
+
+function runDca(info, monthlyAmount, startDate, endDate){
+  const series = DATA.prices[selectedSymbol];
+  const purchaseDates = monthlyPurchaseDates(startDate, endDate);
+  const p1 = nearestValue(series, endDate);
+  const isForeign = info.currency !== "JPY";
+  const fx1 = isForeign ? nearestValue(DATA.usdjpy, endDate) : null;
+
+  let totalUnits = 0;
+  purchaseDates.forEach(d=>{
+    const p = nearestValue(series, d);
+    if(isForeign){
+      const fx = nearestValue(DATA.usdjpy, d);
+      const usdAmount = monthlyAmount / fx.value;
+      totalUnits += usdAmount / p.value;
+    } else {
+      totalUnits += monthlyAmount / p.value;
+    }
+  });
+
+  const principal = monthlyAmount * purchaseDates.length;
+  const finalValue = isForeign ? (totalUnits * p1.value) * fx1.value : totalUnits * p1.value;
+  const profit = finalValue - principal;
+  const pct = (finalValue/principal - 1) * 100;
+  const avgCost = principal / totalUnits; // 円換算の平均取得単価（外貨建ては月ごとの為替も加味した実質値）
+
+  const fxNoteHtml = isForeign
+    ? `為替換算あり: 毎月の購入時レートで円→ドル換算し、終了時 1USD=${fx1.value.toFixed(2)}円(${fx1.date})で円に評価替え。価格変動のみのシンプル計算で、分配金・配当・税金・手数料は含みません。`
+    : "";
+
+  document.getElementById("resPrincipalLabel").textContent = "積立総額";
+  document.getElementById("resFourthLabel").textContent = "平均取得単価（円換算）";
+  document.getElementById("resFourth").textContent = fmtYen(avgCost) + " / 口";
+  document.getElementById("resSub").textContent = `${purchaseDates[0]} 〜 ${p1.date}（積立${purchaseDates.length}回、毎月${fmtYen(monthlyAmount)}）`;
+
+  return {finalValue, principal, profit, pct, fxNoteHtml, chartStart: purchaseDates[0], chartEnd: p1.date};
+}
+
+function runSearch(){
+  showError("");
+  const info = tickerInfo(selectedSymbol);
+  const amount = Number(document.getElementById("amountInput").value.replace(/[^0-9]/g,"")) || 0;
+  if(amount <= 0){ showError(mode==="dca" ? "毎月の積立額を入力してください。" : "投資額を入力してください。"); return; }
+
+  const startDate = getSelectedDate("start");
+  const endDate = getSelectedDate("end");
+  if(startDate >= endDate){ showError("開始日は終了日より前にしてください。"); return; }
+
+  const r = mode === "dca"
+    ? runDca(info, amount, startDate, endDate)
+    : runLumpSum(info, amount, startDate, endDate);
+
+  document.getElementById("resFundLabel").textContent = `${info.name}（${info.symbol}）`;
+  const pctEl = document.getElementById("resPct");
+  pctEl.textContent = fmtPct(r.pct);
+  pctEl.className = "pct " + (r.pct>=0 ? "up":"down");
+  document.getElementById("resPrincipal").textContent = fmtYen(r.principal);
+  document.getElementById("resFinal").textContent = fmtYen(r.finalValue);
+  const profitEl = document.getElementById("resProfit");
+  profitEl.textContent = (r.profit>=0?"+":"") + fmtYen(r.profit);
+  profitEl.style.color = r.profit>=0 ? "var(--up)" : "var(--down)";
+
+  // sparkline
+  const series = DATA.prices[selectedSymbol];
+  const keys = Object.keys(series).sort().filter(k => k>=r.chartStart && k<=r.chartEnd);
+  const sampled = keys.filter((_,i)=> i % Math.max(1,Math.floor(keys.length/200)) === 0);
+  const values = sampled.map(k=>series[k]);
+  document.getElementById("chartBox").innerHTML = values.length>1 ? buildSparkline(sampled, values) : "";
+
+  const fxNoteEl = document.getElementById("fxNote");
+  if(r.fxNoteHtml){ fxNoteEl.style.display="block"; fxNoteEl.innerHTML = r.fxNoteHtml; }
+  else { fxNoteEl.style.display="none"; }
+
+  document.getElementById("result").style.display = "block";
+  document.getElementById("result").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+document.getElementById("searchBtn").addEventListener("click", runSearch);
+
+const howtoModal = document.getElementById("howtoModal");
+document.getElementById("howtoBtn").addEventListener("click", ()=> howtoModal.classList.add("open"));
+document.getElementById("howtoClose").addEventListener("click", ()=> howtoModal.classList.remove("open"));
+howtoModal.addEventListener("click", e=> { if(e.target === howtoModal) howtoModal.classList.remove("open"); });
+
+buildAmountChips();
+loadData();
+</script>
+</body>
+</html>
